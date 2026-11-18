@@ -18,7 +18,7 @@
 
 - Using the Kindle as a real monitor (VNC, screen streaming).
 - Colour, video, animation.
-- Access from outside the home network (the Kindle only needs the LAN).
+- Access from outside the home network (the Kindle only needs the LAN). **Deferred, direction chosen (Tyler, 2026-11-18):** when needed, publish the frame endpoint through the existing Cloudflare tunnel (e.g. `frame.<domain>`) behind a secret token; the plugin tries the LAN URL first, then the public one (needs https + token support in the plugin). Until then, away from home the Kindle keeps showing its last frame.
 - Refreshing while asleep (RTC wake-ups) and an always-on dashboard mode. Revisit only if Tyler asks.
 
 ## 3. Device & environment
@@ -41,7 +41,7 @@
 | Resolution | **1072×1448**, 300 ppi, 16 grey levels. Framebuffer is padded (virtual 1088 wide, stride 1088); **use the size KOReader reports**, not `fb0/virtual_size`. | VERIFIED (probe) |
 | KOReader | **v2026.07.2** (updated 2026-11-18); sleep screen already in "image file" mode (`document_cover`), message off, stretch off. KOReader draws its own sleep screen because `com.lab126.blanket load` has no `ad_screensaver` | VERIFIED (probe) |
 | User storage | `/mnt/us` is `fuse.fsp` (not vfat) | VERIFIED (probe) |
-| Orientation | **Upright** on a stand with a cutout / corner pads keeping the power button clear. Frames are never rotated. | VERIFIED (Tyler, §11 Q2) |
+| Orientation | **Selectable** in the plugin menu: portrait, landscape resting on the left edge (power button and USB on the right), or on the right edge. The server lays out landscape at 1448×1072 and turns it into the portrait buffer | VERIFIED (Tyler, §11 Q2, revised 2026-11-18) |
 
 ### Unknown; Phase 0 must answer
 
@@ -180,7 +180,7 @@ Then **measure on the device** (Tyler presses the power button; Claude Code watc
 Only Q6 is still open.
 
 1. ~~Which first, and what should the dashboard show?~~ Photo mode first, then a dashboard of swappable boards: daily (date, weather, calendar) first, later RSS board, trend tracker, or something cool (VERIFIED).
-2. ~~**Orientation.**~~ **Decided: (a) upright** (VERIFIED). Original options kept for the record: The PW4 can't tell how it is being held (no accelerometer, INFERRED), so a frame pre-rotated 180° for an upside-down mount shows upside down whenever you put it to sleep while holding it. Options:
+2. ~~**Orientation.**~~ **Revised 2026-11-18: selectable in the plugin menu** (portrait / landscape on the left edge / landscape on the right edge); Tyler leans towards landscape on the left edge. (Earlier decision: (a) upright.) Original options kept for the record: The PW4 can't tell how it is being held (no accelerometer, INFERRED), so a frame pre-rotated 180° for an upside-down mount shows upside down whenever you put it to sleep while holding it. Options:
    - (a) **Mount it upright** on a stand with a cutout (or rest it on two corner pads so the power button is clear). No rotation, no conflict. *Recommended for dual use.*
    - (b) Mount it at 180° and accept an upside-down frame until it's docked.
    - (c) Mount it at 180° and add a plugin toggle ("docked: rotate 180°") that is sent with the request.

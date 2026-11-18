@@ -13,6 +13,7 @@ The contract is deliberately tiny so the device side stays dumb (SPEC.md D1/D3).
 | `w` | yes | int | 100 ≤ w ≤ 4000 | Screen width in pixels, as KOReader reports it |
 | `h` | yes | int | 100 ≤ h ≤ 4000 | Screen height in pixels |
 | `batt` | no | int | 0 ≤ batt ≤ 100 | Battery %, so boards can show it |
+| `orient` | no | enum | `portrait` (default) \| `left` \| `right` | How the device stands. `left`/`right` = landscape resting on that edge: the server lays out at `h`×`w` and turns it into the `w`×`h` buffer (90° clockwise for `left`, counter-clockwise for `right`). The response size is always `w`×`h`. |
 
 Unknown parameters are ignored, so older plugins keep working with newer servers. An out-of-range `batt` is ignored rather than rejected.
 
@@ -22,8 +23,8 @@ Unknown parameters are ignored, so older plugins keep working with newer servers
 
 | Status | When | Body | Headers |
 |---|---|---|---|
-| `200` | Frame rendered | PNG, exactly `w`×`h`, 8-bit greyscale (mode `L`), values limited to the 16 levels `0, 17, 34, …, 255` | `Content-Type: image/png`, `Content-Length`, `Cache-Control: no-store`, `X-Frame-Mode: art\|photo\|dashboard`, `X-Frame-Source: <generator \| "photo i/n" \| board>` (never a file name), `X-Frame-Seed: <int>` (art only), `X-Rendered-At: <ISO-8601 UTC>` |
-| `400` | `w`/`h` missing, not integers or out of range; unknown `art` generator | JSON `{"error": "<reason>"}` | — |
+| `200` | Frame rendered | PNG, exactly `w`×`h`, 8-bit greyscale (mode `L`), values limited to the 16 levels `0, 17, 34, …, 255` | `Content-Type: image/png`, `Content-Length`, `Cache-Control: no-store`, `X-Frame-Mode: art\|photo\|dashboard`, `X-Frame-Source: <generator \| "photo i/n" \| board>` (never a file name), `X-Frame-Seed: <int>` (art only), `X-Frame-Orient: portrait\|left\|right`, `X-Rendered-At: <ISO-8601 UTC>` |
+| `400` | `w`/`h` missing, not integers or out of range; unknown `art` generator; unknown `orient` | JSON `{"error": "<reason>"}` | — |
 | `503` | Nothing to render (e.g. empty photo folder) or the renderer is broken | JSON `{"error": "<reason>"}` | `Retry-After: 300` |
 
 A board whose data source fails still returns `200` with that section marked "unavailable" (spec FR-017a). `503` is reserved for "no frame can be made at all".

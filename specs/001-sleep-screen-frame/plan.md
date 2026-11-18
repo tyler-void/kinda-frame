@@ -94,10 +94,11 @@ server/
 │   │   ├── base.py                  # Piece, density (bincount), tonemap, captioned compose
 │   │   ├── chladni.py · flowfield.py · attractor.py · orbits.py
 │   ├── photo.py                     # folder scan, random / sequential, cursor state
-│   ├── html.py                      # (M3b) Playwright page pool → screenshot at w×h
+│   ├── html.py                      # Playwright: one warm Chromium on its own thread, offline pages, screenshot at w×h
 │   └── boards/
-│       ├── base.py                  # Board protocol: name, ttl, fetch(), template
-│       ├── registry.py              # discovers boards/<name>/
+│       ├── __init__.py              # registry (BOARDS) + Jinja2 env (autoescape, StrictUndefined)
+│       ├── base.py                  # Section, SourceCache (TTL, stale-on-error), BoardContext
+│       ├── _shared/icons.html       # line-art weather icons (inline SVG)
 │       └── daily/
 │           ├── board.py             # Open-Meteo + ICS sources, per-source timeout
 │           └── template.html
@@ -150,7 +151,7 @@ Each milestone must pass its gate before the next starts. Owner approval is need
 | **M1b** | Redraw spike: debug-only menu entry that, 2 s into sleep, swaps `current.png` and runs the R5 redraw sequence | Research R5 | Redraw works ≥ 9/10 sleeps with no late redraw after wake, or **🧑 choose the D6 fallback** |
 | **M2** | Plugin against the stub server (`python -m http.server` on the dev machine) | Stories 2, 3, 5; FR-004 to FR-014, FR-020 | SC-001, SC-002, SC-003 on the stub; Wi-Fi before = after in every log line; busted suite green |
 | **M3a** | Server, **art mode** (4 generators) + photo mode, deployed on home-server | Story 4 (art, photo), FR-015, FR-016, FR-018, FR-019, FR-024 | pytest green (57); `/frame.png` correct size and palette; SC-008 (cold 1.2 s, pre-rendered ~30 ms); plugin pointed at the server passes 20 cycles |
-| **M3b** | Server, daily board (date, Open-Meteo weather, ICS calendar, battery, rendered-at) | Story 4 (dashboard), FR-017, FR-017a | Board renders with each source killed in turn; SC-006 for a template edit |
+| **M3b** | Server, daily board (date, Open-Meteo weather, ICS calendar, battery, rendered-at), portrait + landscape | Story 4 (dashboard), FR-017, FR-017a | Board renders with each source killed in turn; SC-006 for a template edit. **Status 2026-11-18:** built, 83 tests green, Chromium verified in the hardened container (cold 0.59 s, warm 0.13 s); waiting for location/timezone/calendar config to go live |
 | **M4** | Soak and battery: one day of normal use with the plugin on | SC-004 | ≤ 20 % over the M0 baseline; log shows no stuck Wi-Fi |
 | later | More boards (RSS, trend tracker, …) as separate features | FR-017 | each one: new `boards/<name>/` only |
 

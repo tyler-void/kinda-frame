@@ -99,7 +99,7 @@ The owner can turn the refresh off, or go back to their previous sleep-screen se
 - **Partial download / power loss while saving:** the saved image is replaced atomically, so the next sleep never shows a corrupt or half-written image.
 - **First run with no saved image yet:** the sleep screen falls back to the owner's previous sleep-screen behaviour until the first successful fetch.
 - **Battery runs flat:** the device reboots into the stock interface and shows its ads until the reading app is opened again. Out of scope for this feature (SPEC.md Phase 4).
-- **Device held instead of mounted:** not an issue. The device is mounted upright, so frames are never rotated and look right in the hand and on the stand.
+- **Device held instead of mounted:** with a landscape orientation selected, a frame shown while the device is held upright appears sideways (the PW4 has no orientation sensor). Portrait has no such conflict.
 - **A board's data source is down** (e.g. weather service, an RSS feed): the server still returns a frame, marking that section as unavailable instead of failing the whole image.
 - **Server returns the same image as last time:** shown as normal; no special handling.
 
@@ -137,7 +137,7 @@ The owner can turn the refresh off, or go back to their previous sleep-screen se
 - **FR-017**: The server MUST support a dashboard mode made of interchangeable boards, selected in server configuration. The first board is the daily board (date, the day's weather, today's calendar). Adding a board (e.g. RSS headlines, trend tracker) MUST NOT require changes to the device or to existing boards.
 - **FR-017a**: Every dashboard frame MUST show when it was rendered, MUST favour content that stays valid for hours over time-of-day content, and MUST still render if one of its data sources is unavailable.
 - **FR-018**: All look-and-feel changes MUST be possible on the server alone, without changing anything on the device.
-- **FR-019**: Frames MUST be produced upright (no rotation); the device is mounted upright.
+- **FR-019**: The owner MUST be able to choose the frame orientation on the device (plugin menu): **portrait**, **landscape resting on the left edge**, or **landscape resting on the right edge**. The server lays the frame out for that orientation and returns it in the device's fixed portrait buffer size. Changing the setting fetches a new frame immediately. *(Revised 2026-11-18; was "always upright".)*
 
 **Control and undo (Story 5)**
 
@@ -181,8 +181,9 @@ The owner can turn the refresh off, or go back to their previous sleep-screen se
 - **The device drops Wi-Fi on suspend** (owner's observation, to be confirmed). That is why the fetch must finish in the short window between drawing the sleep screen and suspending.
 - **Feasibility gate.** The "show saved image, then refresh" flow depends on a usable time window before suspend and on the sleep screen being redrawable. A read-only device probe (SPEC.md Phase 0) confirms both before any plugin work. If either fails, the owner decides the fallback.
 - **Battery target.** "Comparable to before" is read as at most 20% more daily drain than the measured baseline.
-- **Orientation (owner's decision).** The device is mounted upright on a stand with a cutout or corner pads that keep the power button clear. Frames are never rotated.
+- **Orientation (owner's decision, revised 2026-11-18).** Selectable per device: portrait, or landscape resting on the left edge (the owner's preferred stand position: power button and USB on the right) or on the right edge.
 - **Board data comes from the server side.** RSS feeds, weather, calendars and trend data are fetched by the home server, which may use the internet; the Kindle itself still only talks to the home server (FR-014). Credentials and feed lists live in uncommitted server config.
 - **Double refresh accepted.** When a new image arrives, the screen refreshes twice during sleep (saved image, then new one). This is the price of instant sleep.
+- **Outside the home network** is out of scope for this feature: the Kindle keeps its last frame away from home. Chosen direction for a later feature: Cloudflare tunnel + secret token, LAN first (SPEC.md §2).
 - **Testing order.** Stories 2–3 are proven against a simple stand-in image source before the real server (Story 4) exists.
 - **Dependencies:** the existing jailbreak, the reading app and its remote-login access, and an always-on home server on the same network.

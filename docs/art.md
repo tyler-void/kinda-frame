@@ -74,6 +74,10 @@ Either of two pen-plotter classics, 50/50:
   ```
   The frequency differences are multiples of a symmetry number from 3 to 9, so the curve closes into a 3- to 9-fold rosette. It's drawn as three slightly scaled passes, so the line has some weight.
 
+## Portrait and landscape
+
+With *Frame orientation* set to landscape in the plugin, the server renders on a 1448×1072 canvas and turns it into the buffer (`imaging/orient.py`). Margins and type scale by the short side, so both orientations look alike. `attractor` and `orbits` turn their point cloud so its long axis runs along the frame's long side (`align` in `art/base.py`).
+
 ## Shared pipeline (`art/base.py`)
 
 1. **Accumulate:** point clouds become per-pixel counts with `np.bincount`, about 10× faster than `np.add.at`.

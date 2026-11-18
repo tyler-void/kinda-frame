@@ -24,6 +24,7 @@ There is no database. Everything is small files on the Kindle or the server, plu
 |---|---|---|---|
 | `kindaframe_enabled` | bool | `false` | Refresh-on-sleep on/off (FR-020). Off by default until tested. |
 | `kindaframe_server_url` | string | `""` | Must start with `http://`. Empty means "fetch disabled". |
+| `kindaframe_orient` | string | `portrait` | `portrait` \| `left` \| `right` (FR-019); sent as `orient=` |
 | `kindaframe_budget_s` | number | `25` | Clamped to 3–60 s (FR-007). Raised from 15 s: a cold Wi-Fi reconnect took ~13 s (device-probe). |
 | `kindaframe_margin_s` | number | `5` | Safety margin subtracted from the measured window. |
 | `kindaframe_window_s` | number | `60` (measured SCREEN SAVER dwell) | Measured time between sleep screen drawn and suspend. `nil` means "unknown": fetch disabled, show the saved frame only. |
@@ -83,7 +84,12 @@ Invariants:
 | `boards.daily.location` | `{lat, lon, label}` | — | Private: only in the uncommitted file |
 | `boards.daily.calendar_ics` | list of URLs | — | Private |
 | `boards.<name>.*` | board-specific | — | Validated by the board itself |
-| `timezone` | IANA name | `Etc/UTC` (set the real zone locally) | Used for "rendered at" and date |
+| `timezone` | IANA name | `Etc/UTC` (set the real zone locally) | Used for "rendered at", date and agenda; validated at start |
+| `dashboard.board` | string | `daily` | Must name a registered board |
+| `boards.daily.latitude` / `longitude` | float | — | Private. Weather is "unavailable" until set |
+| `boards.daily.location_label` | string | `Home` | Shown under the date |
+| `boards.daily.units` | enum | `metric` | `metric` \| `imperial` |
+| `boards.daily.calendars` | list of URLs | `[]` | Private (secret ICS URLs). Hashed for cache keys, never rendered or logged |
 
 ### Board
 
