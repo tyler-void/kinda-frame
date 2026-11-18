@@ -1,0 +1,24 @@
+# Generated test/stub images (regenerate with tools/make-test-card.py)
+tools/stub/
+
+# Private server config and secrets (SPEC.md §5 rule 7)
+server/config.toml
+.env
+*.env
+
+# Python / tooling
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Editors / OS
+.DS_Store
+*.swp
+
+# Server runtime data
+server/photos/
+
+# Per-machine Claude Code settings
+.claude/settings.local.json
