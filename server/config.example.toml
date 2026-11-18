@@ -1,0 +1,19 @@
+# kinda-frame server configuration. Copy to config.toml (git-ignored) and edit.
+# Restart after changes:  docker compose -p kinda-frame restart
+
+# What the frame shows:
+#   "art"   generative pieces rendered in code (docs/art.md), a new one on every sleep
+#   "photo" one image from [photo].dir, fitted and dithered for the screen
+#   ("dashboard" boards arrive with milestone M3b)
+mode = "art"
+
+[art]
+# Any non-empty subset of: chladni, flowfield, attractor, orbits
+generators = ["chladni", "flowfield", "attractor", "orbits"]
+# "random": any generator, never the same twice in a row · "cycle": in the order listed above
+order = "random"
+
+[photo]
+dir = "/photos"       # container path; the host folder is ./photos (see compose.yaml)
+order = "random"      # random | sequential
+fit = "crop"          # crop (fill the screen) | pad (whole photo, white bars)

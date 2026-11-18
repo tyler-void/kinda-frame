@@ -1,0 +1,38 @@
+# kinda-frame renderer stack. Its own compose project; touches no other stack (SPEC.md §5 rule 6).
+#
+# Deploy (on the server, in this folder):
+#   cp config.example.toml config.toml   # once; edit locally, never commit
+#   mkdir -p photos                      # once; drop photos here for photo mode
+#   echo "KF_BIND=<server-lan-ip>" > .env   # once; publish on the LAN interface only
+#   docker compose -p kinda-frame up -d --build
+name: kinda-frame
+
+services:
+  frame:
+    build: .
+    image: kinda-frame:local
+    container_name: kinda-frame
+    restart: unless-stopped
+    ports:
+      # LAN only. Defaults to loopback if .env is missing, so a bad deploy is never exposed wider.
+      - "${KF_BIND:-127.0.0.1}:8787:8787"
+    volumes:
+      - ./config.toml:/app/config.toml:ro
+      - ./photos:/photos:ro
+      - state:/state
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - "no-new-privileges:true"
+    mem_limit: 512m
+    cpus: 2
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  state:
