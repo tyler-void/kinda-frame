@@ -20,6 +20,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from . import config as config_mod
 from .config import ALL_GENERATORS, CONTENT_MODES, Config, hhmm
+from . import photo as photo_mod
 from .imaging import grey16
 from .imaging.orient import ORIENTS
 from .render import NoContent, Renderer
@@ -109,6 +110,20 @@ def form_to_overrides(form: dict, cfg: Config) -> dict:
 
 
 def install(app: FastAPI, store: ConfigStore, renderer: Renderer, status: dict) -> None:
+    def photo_list() -> list[dict]:
+        cfg = store.current
+        out = [{"name": p.name, "src": "folder"} for p in photo_mod.list_photos(cfg.photo.dir)]
+        out += [{"name": p.name, "src": "uploads"} for p in photo_mod.list_photos(photo_mod.uploads_dir(cfg.state_dir))]
+        return out
+
+    def photo_path(src: str, name: str):
+        cfg = store.current
+        folder = cfg.photo.dir if src == "folder" else photo_mod.uploads_dir(cfg.state_dir)
+        for p in photo_mod.list_photos(folder):  # only files that are actually listed: no path tricks
+            if p.name == name:
+                return p
+        return None
+
     def page(request: Request, error: str | None = None, code: int = 200) -> HTMLResponse:
         cfg = store.current
         daily = cfg.boards.get("daily", {})
@@ -124,6 +139,8 @@ def install(app: FastAPI, store: ConfigStore, renderer: Renderer, status: dict) 
             calendars=[mask(u) for u in daily.get("calendars", [])],
             planned=renderer.planned_mode(), previews=previews, status=status,
             has_overrides=bool(store.overrides()),
+            photos=photo_list(),
+            max_upload_mb=photo_mod.MAX_UPLOAD // (1024 * 1024),
             base_error=store.base_error,
         )
         return HTMLResponse(html, status_code=code, headers={"Cache-Control": "no-store"})
@@ -153,6 +170,41 @@ def install(app: FastAPI, store: ConfigStore, renderer: Renderer, status: dict) 
             return JSONResponse({"error": "cross-origin request refused"}, status_code=403)
         store.reset()
         return RedirectResponse("/settings?saved=1", status_code=303)
+
+    @app.post("/photos/upload")
+    async def upload(request: Request):
+        if not same_origin(request):
+            return JSONResponse({"error": "cross-origin request refused"}, status_code=403)
+        if int(request.headers.get("content-length") or 0) > photo_mod.MAX_UPLOAD:
+            return JSONResponse({"error": "file larger than 30 MB"}, status_code=413)
+        data = await request.body()
+        try:
+            saved = photo_mod.save_upload(store.current.state_dir, request.query_params.get("name", "photo"), data)
+        except ValueError as e:
+            return JSONResponse({"error": str(e)}, status_code=400)
+        return {"ok": True, "name": saved.name}
+
+    @app.post("/photos/delete")
+    async def delete_photo(request: Request):
+        if not same_origin(request):
+            return JSONResponse({"error": "cross-origin request refused"}, status_code=403)
+        form = parse_qs((await request.body()).decode("utf-8", "replace"))
+        photo_mod.delete_upload(store.current.state_dir, _one(form, "name"))
+        return RedirectResponse("/settings?saved=1#photos", status_code=303)
+
+    @app.get("/photos/thumb")
+    def thumb(src: str = "uploads", name: str = ""):
+        p = photo_path(src, name)
+        if p is None:
+            return JSONResponse({"error": "not found"}, status_code=404)
+        from PIL import Image, ImageOps
+
+        with Image.open(p) as im:
+            im = ImageOps.exif_transpose(im)
+            im.thumbnail((240, 240))
+            buf = io.BytesIO()
+            im.convert("L").save(buf, format="JPEG", quality=80)  # greyscale: roughly what the Kindle will show
+        return Response(buf.getvalue(), media_type="image/jpeg", headers={"Cache-Control": "no-store"})
 
     @app.get("/preview.png")
     def preview(request: Request):

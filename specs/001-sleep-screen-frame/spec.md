@@ -135,9 +135,15 @@ The owner can turn the refresh off, or go back to their previous sleep-screen se
 - **FR-015**: The server MUST return a frame at the screen size the device requests.
 - **FR-016**: The server MUST support an **art mode** (generative pieces from configurable generators `chladni`, `flowfield`, `attractor`, `orbits`; random or cycling order; deterministic per seed; delivered first) and a **photo mode** (one image from a configured folder, random or sequential, fitted and contrast-adjusted for e-ink).
 - **FR-017**: The server MUST support a dashboard mode made of interchangeable boards, selected in server configuration. The first board is the daily board (date, the day's weather, today's calendar). Adding a board (e.g. RSS headlines, trend tracker) MUST NOT require changes to the device or to existing boards.
+- **FR-016a**: The server MUST support a **mixed** mode that switches between art, photo and dashboard either on a daily time-of-day schedule or by alternating on every sleep; a frame prepared for the wrong time slot MUST NOT be served.
 - **FR-017a**: Every dashboard frame MUST show when it was rendered, MUST favour content that stays valid for hours over time-of-day content, and MUST still render if one of its data sources is unavailable.
 - **FR-018**: All look-and-feel changes MUST be possible on the server alone, without changing anything on the device.
 - **FR-019**: The owner MUST be able to choose the frame orientation on the device (plugin menu): **portrait**, **landscape resting on the left edge**, or **landscape resting on the right edge**. The server lays the frame out for that orientation and returns it in the device's fixed portrait buffer size. Changing the setting fetches a new frame immediately. *(Revised 2026-11-18; was "always upright".)*
+
+**Settings page (added 2026-11-18)**
+
+- **FR-020a**: The owner MUST be able to change mode, schedule, art generators, place/coordinates/time zone/units, calendars and photo options from a page on the home network, with previews; changes apply from the next sleep without a restart, invalid input saves nothing, and saved changes can be reset to the server's config file.
+- **FR-020b**: The owner MUST be able to upload photos from that page; uploads are validated as images and re-saved without metadata (no location or camera data). Calendar URLs MUST be shown masked and requests that change settings MUST come from the page itself.
 
 **Control and undo (Story 5)**
 

@@ -40,6 +40,10 @@
   figure { margin: 0; }
   figure img { width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 6px; background: #fff; display: block; }
   figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .thumb img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 6px; border: 1px solid var(--rule); display: block; }
+  .thumb figcaption { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  button.link { border: 0; padding: 0; background: none; color: #7a0016; font-size: 12px; font-weight: 600; text-decoration: underline; cursor: pointer; }
   dl.status { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 14px; margin: 0 0 12px; }
   dl.status dt { color: var(--muted); }
   dl.status dd { margin: 0; }
@@ -152,9 +156,31 @@
       </fieldset>
     </section>
 
-    <section>
+    <section id="photos">
       <h2>Photos</h2>
-      <p class="hint">Put images in <code>~/kinda-frame/photos</code> on the server.</p>
+      <p class="hint">Upload here, or copy files into <code>~/kinda-frame/photos</code> on the server. Uploads are re-saved without metadata (no location or camera data), shown in grey roughly as the Kindle will.</p>
+      {% if photos %}
+      <div class="thumbs">
+        {% for p in photos %}
+        <figure class="thumb">
+          <img loading="lazy" src="/photos/thumb?src={{ p.src }}&amp;name={{ p.name | urlencode }}" alt="{{ p.name }}">
+          <figcaption>
+            {% if p.src == "uploads" %}
+            <button class="link" type="submit" formaction="/photos/delete" name="name" value="{{ p.name }}" formnovalidate>Delete</button>
+            {% else %}server folder{% endif %}
+          </figcaption>
+        </figure>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="hint">No photos yet.</p>
+      {% endif %}
+      <div class="upload">
+        <label class="field">Add photos (JPEG, PNG, WebP; up to {{ max_upload_mb }} MB each)
+          <input type="file" id="photo-files" accept="image/jpeg,image/png,image/webp" multiple>
+        </label>
+        <p class="hint" id="upload-status" aria-live="polite"></p>
+      </div>
       <div class="grid">
         <label class="field">Order
           <select name="photo_order">
@@ -187,6 +213,19 @@
       el.style.display = (k === 'mixed' && mode === 'mixed') || (mode === 'mixed' && k === strat) ? 'block' : 'none';
     }
   };
+  // Photo upload: one request per file, raw bytes (no multipart parsing needed on the server).
+  const files = document.getElementById('photo-files');
+  const status = document.getElementById('upload-status');
+  files?.addEventListener('change', async () => {
+    let ok = 0, failed = [];
+    for (const [i, f] of [...files.files].entries()) {
+      status.textContent = `Uploading ${i + 1} of ${files.files.length}: ${f.name}…`;
+      const r = await fetch('/photos/upload?name=' + encodeURIComponent(f.name), { method: 'POST', body: f });
+      if (r.ok) ok++; else failed.push(`${f.name}: ${(await r.json().catch(() => ({}))).error || r.status}`);
+    }
+    status.textContent = `${ok} uploaded` + (failed.length ? ` · not uploaded: ${failed.join('; ')}` : '');
+    if (ok) setTimeout(() => location.assign('/settings#photos'), 800);
+  });
   document.querySelectorAll('[data-toggle]').forEach(i => i.addEventListener('change', sync));
   document.querySelectorAll('[data-show]').forEach(el => el.style.display = 'block');
   sync();

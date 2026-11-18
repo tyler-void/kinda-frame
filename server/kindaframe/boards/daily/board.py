@@ -49,12 +49,20 @@ def wmo(code: Any) -> tuple[str, str]:
 # ----------------------------------------------------------------------------- weather
 def weather_url(lat: float, lon: float, tz: str, units: str) -> str:
     q = (f"latitude={lat:.4f}&longitude={lon:.4f}&timezone={tz}&forecast_days=2"
-         "&current=temperature_2m,apparent_temperature,weather_code"
-         "&hourly=temperature_2m,precipitation_probability,weather_code"
+         "&current=temperature_2m,apparent_temperature,weather_code,is_day"
+         "&hourly=temperature_2m,precipitation_probability,weather_code,is_day"
          "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset")
     if units == "imperial":
         q += "&temperature_unit=fahrenheit"
     return f"{OPEN_METEO}?{q}"
+
+
+NIGHT = {"clear": "clear_night", "partly": "partly_night"}
+
+
+def night(icon: str, is_day) -> str:
+    """Moon instead of sun after dark (Open-Meteo is_day = 0). Other conditions look the same at night."""
+    return NIGHT.get(icon, icon) if is_day == 0 else icon
 
 
 def parse_weather(raw: dict, now: datetime) -> dict:
@@ -70,6 +78,8 @@ def parse_weather(raw: dict, now: datetime) -> dict:
         }
 
     label, icon = wmo(cur["weather_code"])
+    icon = night(icon, cur.get("is_day"))
+    hourly_day = hourly.get("is_day") or [1] * len(hourly["time"])
     # Next ~15 h at 3-hour steps, starting from the current hour.
     start = now.replace(minute=0, second=0, microsecond=0, tzinfo=None)
     times = [datetime.fromisoformat(t) for t in hourly["time"]]
@@ -80,7 +90,7 @@ def parse_weather(raw: dict, now: datetime) -> dict:
                 "time": t.strftime("%H:%M"),
                 "temp": round(hourly["temperature_2m"][i]),
                 "rain": hourly["precipitation_probability"][i],
-                "icon": wmo(hourly["weather_code"][i])[1],
+                "icon": night(wmo(hourly["weather_code"][i])[1], hourly_day[i]),
             })
     return {
         "now": {"temp": round(cur["temperature_2m"]), "feels": round(cur["apparent_temperature"]),
