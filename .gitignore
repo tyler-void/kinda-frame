@@ -32,3 +32,6 @@ server/photos/
 /*.heic
 /*.HEIC
 /*.webp
+
+# Local-only notes with real infrastructure values (SPEC.md rule 7)
+.local/
