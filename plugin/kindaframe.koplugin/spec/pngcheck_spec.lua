@@ -1,0 +1,38 @@
+local png = require("kf/pngcheck")
+
+local function be32(n)
+    return string.char(math.floor(n / 16777216) % 256, math.floor(n / 65536) % 256, math.floor(n / 256) % 256, n % 256)
+end
+
+local function header(w, h)
+    return png.SIGNATURE .. be32(13) .. "IHDR" .. be32(w) .. be32(h) .. "\8\0\0\0\0"
+end
+
+describe("pngcheck", function()
+    it("reads width and height from IHDR", function()
+        local w, h = png.dimensions(header(1072, 1448))
+        assert_eq(w, 1072); assert_eq(h, 1448)
+    end)
+    it("accepts the expected size", function()
+        assert_true(png.check(header(1072, 1448), 1072, 1448))
+    end)
+    it("rejects a wrong size with a reason", function()
+        local ok, why = png.check(header(1448, 1072), 1072, 1448)
+        assert_false(ok); assert_eq(why, "size 1448x1072, expected 1072x1448")
+    end)
+    it("rejects empty, short and non-PNG input", function()
+        assert_false((png.check("", 1, 1)))
+        assert_false((png.check(png.SIGNATURE, 1, 1)))
+        assert_false((png.check(string.rep("x", 30), 1, 1)))
+        local ok, why = png.check("<html>" .. string.rep(" ", 30), 1, 1)
+        assert_false(ok); assert_eq(why, "not a PNG")
+    end)
+    it("checks files by their first 24 bytes", function()
+        local path = os.tmpname()
+        local f = io.open(path, "wb"); f:write(header(10, 20), string.rep("\0", 100)); f:close()
+        assert_true(png.check_file(path, 10, 20))
+        assert_false((png.check_file(path, 20, 10)))
+        os.remove(path)
+        assert_false((png.check_file(path, 10, 20)))
+    end)
+end)

@@ -1,0 +1,27 @@
+local log = require("kf/fetchlog")
+
+describe("fetchlog", function()
+    it("formats fields in a fixed order with on/off Wi-Fi", function()
+        local line = log.format("2026-11-20T21:14:03", {
+            kind = "sleep", outcome = "new_frame", ms = 4210, wifi_before = true, wifi_after = true, bytes = 30293,
+        })
+        assert_eq(line, "2026-11-20T21:14:03 outcome=new_frame ms=4210 wifi_before=on wifi_after=on bytes=30293 kind=sleep")
+    end)
+    it("squashes whitespace in free-text details", function()
+        local line = log.format("T", { outcome = "unreachable", detail = "connection refused\nnow" })
+        assert_eq(line, "T outcome=unreachable detail=connection_refused_now")
+    end)
+    it("appends, rotates past the size limit and tails", function()
+        local path = os.tmpname()
+        os.remove(path)
+        for i = 1, 5 do log.append(path, "line " .. i, 30) end
+        local cur, old = log.tail(path, 10), log.tail(path .. ".1", 10)
+        assert_true(#cur >= 1 and #cur <= 4, "current file stays small")
+        assert_eq(cur[#cur], "line 5")
+        assert_true(#old >= 1, "previous generation kept")
+        os.remove(path); os.remove(path .. ".1")
+    end)
+    it("tail of a missing file is empty", function()
+        assert_eq(#log.tail("/nonexistent/kf.log", 5), 0)
+    end)
+end)
