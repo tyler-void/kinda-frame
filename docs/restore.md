@@ -1,11 +1,11 @@
 # Restore the original sleep screen (FR-021)
 
-Tyler's setup before kinda-frame: **custom image** `/mnt/us/koreader/wallpapers/previous-wallpaper.png`, message off, stretch off, black background.
+Tyler's setup before kinda-frame: **custom image** `/mnt/us/koreader/wallpapers/<previous wallpaper>` (real file name in `.local/infra.md`, not in this public repo), message off, stretch off, black background.
 That file is never touched by this project.
 
 ## One step (on the Kindle, recommended)
 
-File browser → top menu → **Screen** tab → **Sleep screen** → **Wallpaper** → **Custom images** → **Choose image or document cover** → pick `/mnt/us/koreader/wallpapers/previous-wallpaper.png`.
+File browser → top menu → **Screen** tab → **Sleep screen** → **Wallpaper** → **Custom images** → **Choose image or document cover** → pick your previous wallpaper in `/mnt/us/koreader/wallpapers/`.
 
 The other sleep-screen settings were not changed, so this is the whole restore.
 

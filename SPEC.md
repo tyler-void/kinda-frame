@@ -177,7 +177,7 @@ Then **measure on the device** (Tyler presses the power button; Claude Code watc
 
 ## 11. Open questions for Tyler
 
-Only Q6 is still open.
+All open questions are answered.
 
 1. ~~Which first, and what should the dashboard show?~~ Photo mode first, then a dashboard of swappable boards: daily (date, weather, calendar) first, later RSS board, trend tracker, or something cool (VERIFIED).
 2. ~~**Orientation.**~~ **Revised 2026-11-18: selectable in the plugin menu** (portrait / landscape on the left edge / landscape on the right edge); Tyler leans towards landscape on the left edge. (Earlier decision: (a) upright.) Original options kept for the record: The PW4 can't tell how it is being held (no accelerometer, INFERRED), so a frame pre-rotated 180° for an upside-down mount shows upside down whenever you put it to sleep while holding it. Options:
@@ -187,7 +187,7 @@ Only Q6 is still open.
 3. ~~Will the Kindle still be used for reading?~~ Yes: it stays a reader (VERIFIED), hence D5-c.
 4. ~~Refresh while asleep?~~ No: a fresh image on every sleep is enough (VERIFIED).
 5. ~~Ads over the KOReader sleep screen?~~ Only after a flat battery + reboot into the stock UI (VERIFIED).
-6. Repo: private on Forgejo or public on GitHub?
+6. ~~Repo: private on Forgejo or public on GitHub?~~ **Public on GitHub** (`tyler-void/kinda-frame`, Tyler 2026-11-18). History was scrubbed before the first push (rule 7); real infra values live in the untracked `.local/infra.md`.
 
 ## 12. References
 
