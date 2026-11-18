@@ -48,11 +48,15 @@ def aspect_bounds(xs: np.ndarray, ys: np.ndarray, w: int, h: int, pad: float = 0
     return cx - sx / 2, cx + sx / 2, cy - sy / 2, cy + sy / 2
 
 
-def portrait(xs: np.ndarray, ys: np.ndarray, lo: float = 1.0, hi: float = 99.0) -> tuple[np.ndarray, np.ndarray]:
-    """Turn a point cloud a quarter turn if it is wider than tall, so it fills a portrait screen."""
+def align(xs: np.ndarray, ys: np.ndarray, w: int, h: int,
+          lo: float = 1.0, hi: float = 99.0) -> tuple[np.ndarray, np.ndarray]:
+    """Turn a point cloud a quarter turn if its long axis disagrees with the canvas's long axis,
+    so it fills the frame in portrait and in landscape."""
     wx = np.subtract(*np.percentile(xs, [hi, lo]))
     wy = np.subtract(*np.percentile(ys, [hi, lo]))
-    return (ys, -xs) if wx > wy else (xs, ys)
+    if (wx > wy) != (w > h):
+        return ys, -xs
+    return xs, ys
 
 
 def density(xs: np.ndarray, ys: np.ndarray, w: int, h: int,
@@ -86,10 +90,10 @@ def compose(piece: Piece, w: int, h: int, seed: int, name: str) -> Image.Image:
     The art is dithered (smooth tones); the caption is drawn afterwards and snapped without
     dithering so the text stays crisp.
     """
-    margin = max(24, w // 24)
-    cap_size = max(14, w // 48)
-    cap_h = int(cap_size * 3.2)
-    aw, ah = w - 2 * margin, h - 2 * margin - cap_h
+    aw, ah = art_area(w, h)
+    s = min(w, h)  # scale type and margins by the short side: same look in portrait and landscape
+    margin = max(24, s // 24)
+    cap_size = max(14, s // 48)
 
     art = piece.paper
     if art.shape != (ah, aw):
@@ -113,6 +117,7 @@ def compose(piece: Piece, w: int, h: int, seed: int, name: str) -> Image.Image:
 
 def art_area(w: int, h: int) -> tuple[int, int]:
     """The (width, height) generators should render at for a w x h screen (matches compose)."""
-    margin = max(24, w // 24)
-    cap_h = int(max(14, w // 48) * 3.2)
+    s = min(w, h)
+    margin = max(24, s // 24)
+    cap_h = int(max(14, s // 48) * 3.2)
     return w - 2 * margin, h - 2 * margin - cap_h

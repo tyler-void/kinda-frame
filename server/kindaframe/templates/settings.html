@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kinda-frame · settings</title>
+<style>
+  :root { --ink: #111; --muted: #5d5d5d; --rule: #d9d6cf; --paper: #f7f5f0; --card: #fff; --accent: #111; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+         font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+  header h1 { font-size: 28px; letter-spacing: -0.02em; margin: 0; }
+  header p { margin: 4px 0 0; color: var(--muted); }
+  .note { border-left: 3px solid var(--ink); background: var(--card); padding: 10px 14px; margin: 16px 0; }
+  .note.err { border-color: #b00020; color: #7a0016; }
+  form > section { background: var(--card); border: 1px solid var(--rule); border-radius: 10px;
+                   padding: 18px 18px 8px; margin: 16px 0; }
+  h2 { font-size: 17px; margin: 0 0 4px; }
+  .hint { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+  fieldset { border: 0; margin: 0 0 12px; padding: 0; }
+  legend { font-weight: 600; font-size: 14px; margin-bottom: 6px; padding: 0; }
+  label.opt { display: flex; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--rule); cursor: pointer; }
+  label.opt:first-of-type { border-top: 0; }
+  label.opt input { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; font-size: 14px; font-weight: 600; }
+  input[type=text], input[type=time], input[type=url], select {
+    font: inherit; font-weight: 400; padding: 9px 10px; border: 1px solid #bdb9b0; border-radius: 6px; background: #fff; color: var(--ink); width: 100%; }
+  .row { display: grid; grid-template-columns: 130px 1fr; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .cal { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--rule);
+         font-family: ui-monospace, monospace; font-size: 13px; }
+  .cal label { font-family: system-ui, sans-serif; color: var(--muted); white-space: nowrap; }
+  .actions { position: sticky; bottom: 0; background: linear-gradient(transparent, var(--paper) 30%);
+             padding: 20px 0 8px; display: flex; gap: 12px; align-items: center; }
+  button { font: inherit; font-weight: 600; padding: 11px 22px; border-radius: 8px; border: 1px solid var(--ink); cursor: pointer; }
+  button.primary { background: var(--ink); color: #fff; }
+  button.quiet { background: transparent; color: var(--ink); }
+  .previews { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 12px; }
+  figure { margin: 0; }
+  figure img { width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 6px; background: #fff; display: block; }
+  figcaption { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  dl.status { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; font-size: 14px; margin: 0 0 12px; }
+  dl.status dt { color: var(--muted); }
+  dl.status dd { margin: 0; }
+  @media (max-width: 520px) { .grid { grid-template-columns: 1fr; } .row { grid-template-columns: 110px 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>kinda-frame</h1>
+    <p>What the Kindle shows on its sleep screen. Changes apply from the next sleep.</p>
+  </header>
+
+  {% if base_error %}<div class="note err"><strong>Server config problem:</strong> {{ base_error }} (running on defaults plus saved settings)</div>{% endif %}
+  {% if error %}<div class="note err"><strong>Not saved:</strong> {{ error }}</div>{% endif %}
+  {% if saved %}<div class="note">Saved. The next time the Kindle sleeps, it uses these settings.</div>{% endif %}
+
+  <form method="post" action="/settings">
+
+    <section>
+      <h2>Now showing</h2>
+      <dl class="status">
+        <dt>Right now</dt><dd>{{ modes[planned] if planned else "alternating each sleep" }}</dd>
+        <dt>Last frame</dt><dd>{{ status.last or "none yet" }}</dd>
+        <dt>Kindle</dt><dd>{% if status.battery is not none %}battery {{ status.battery }}% · {% endif %}{{ {"portrait": "portrait", "left": "landscape, left edge down", "right": "landscape, right edge down"}[status.orient or "portrait"] }}</dd>
+      </dl>
+      <p class="hint">Orientation is set on the Kindle: Tools → More tools → Kinda Frame → Frame orientation.</p>
+      <div class="previews">
+        {% for m in previews %}
+        <figure><img loading="lazy" src="/preview.png?mode={{ m }}" alt="Preview: {{ modes[m] }}"><figcaption>{{ modes[m] }}</figcaption></figure>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section>
+      <h2>Mode</h2>
+      <fieldset>
+        {% for key, label in modes.items() %}
+        <label class="opt"><input type="radio" name="mode" value="{{ key }}" {{ "checked" if cfg.mode == key }} data-toggle> {{ label }}</label>
+        {% endfor %}
+      </fieldset>
+
+      <div data-show="mixed">
+        <fieldset>
+          <legend>How to mix</legend>
+          <label class="opt"><input type="radio" name="mixed_strategy" value="schedule" {{ "checked" if cfg.mixed.strategy == "schedule" }} data-toggle> By time of day</label>
+          <label class="opt"><input type="radio" name="mixed_strategy" value="alternate" {{ "checked" if cfg.mixed.strategy == "alternate" }} data-toggle> Alternate on every sleep</label>
+        </fieldset>
+        <fieldset data-show="schedule">
+          <legend>Schedule</legend>
+          <p class="hint">Each line applies from its time until the next one, wrapping past midnight. Leave a time empty to remove that line.</p>
+          {% for t, m in schedule %}
+          <div class="row">
+            <input type="time" name="sched_from_{{ loop.index0 }}" value="{{ t }}" aria-label="From">
+            <select name="sched_mode_{{ loop.index0 }}" aria-label="Show">
+              {% for cm in content_modes %}<option value="{{ cm }}" {{ "selected" if cm == m }}>{{ modes[cm] }}</option>{% endfor %}
+            </select>
+          </div>
+          {% endfor %}
+        </fieldset>
+        <fieldset data-show="alternate">
+          <legend>Alternate between</legend>
+          {% for cm in content_modes %}
+          <label class="opt"><input type="checkbox" name="alt_modes" value="{{ cm }}" {{ "checked" if cm in cfg.mixed.modes }}> {{ modes[cm] }}</label>
+          {% endfor %}
+        </fieldset>
+      </div>
+    </section>
+
+    <section>
+      <h2>Generative art</h2>
+      <fieldset>
+        <legend>Generators</legend>
+        {% for g in generators %}
+        <label class="opt"><input type="checkbox" name="art_gen" value="{{ g }}" {{ "checked" if g in cfg.art.generators }}> {{ gen_labels[g] }}</label>
+        {% endfor %}
+      </fieldset>
+      <label class="field">Order
+        <select name="art_order">
+          <option value="random" {{ "selected" if cfg.art.order == "random" }}>Random (never the same twice in a row)</option>
+          <option value="cycle" {{ "selected" if cfg.art.order == "cycle" }}>In turn</option>
+        </select>
+      </label>
+    </section>
+
+    <section>
+      <h2>Daily dashboard</h2>
+      <p class="hint">Weather from Open-Meteo (no account needed). Coordinates are rounded to about 10 m and stay on this server.</p>
+      <div class="grid">
+        <label class="field">Place name <input type="text" name="location_label" value="{{ daily.location_label or "" }}" placeholder="Home"></label>
+        <label class="field">Time zone <input type="text" name="timezone" value="{{ cfg.timezone }}" placeholder="Europe/Berlin" spellcheck="false"></label>
+        <label class="field">Latitude <input type="text" inputmode="decimal" name="latitude" value="{{ daily.latitude if daily.latitude is not none else "" }}" placeholder="52.52"></label>
+        <label class="field">Longitude <input type="text" inputmode="decimal" name="longitude" value="{{ daily.longitude if daily.longitude is not none else "" }}" placeholder="13.40"></label>
+        <label class="field">Units
+          <select name="units">
+            <option value="metric" {{ "selected" if (daily.units or "metric") == "metric" }}>°C</option>
+            <option value="imperial" {{ "selected" if daily.units == "imperial" }}>°F</option>
+          </select>
+        </label>
+      </div>
+      <fieldset>
+        <legend>Calendars</legend>
+        <p class="hint">Google Calendar: Settings → your calendar → "Secret address in iCal format". These links are secrets: they're shown shortened here and never on the Kindle.</p>
+        {% for c in calendars %}
+        <div class="cal"><span>{{ c }}</span><label><input type="checkbox" name="cal_remove_{{ loop.index0 }}"> remove</label></div>
+        {% else %}
+        <p class="hint">No calendars yet.</p>
+        {% endfor %}
+        <label class="field">Add a calendar <input type="url" name="cal_add" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics" autocomplete="off"></label>
+      </fieldset>
+    </section>
+
+    <section>
+      <h2>Photos</h2>
+      <p class="hint">Put images in <code>~/kinda-frame/photos</code> on the server.</p>
+      <div class="grid">
+        <label class="field">Order
+          <select name="photo_order">
+            <option value="random" {{ "selected" if cfg.photo.order == "random" }}>Random</option>
+            <option value="sequential" {{ "selected" if cfg.photo.order == "sequential" }}>In order</option>
+          </select>
+        </label>
+        <label class="field">Fit
+          <select name="photo_fit">
+            <option value="crop" {{ "selected" if cfg.photo.fit == "crop" }}>Fill the screen (crop)</option>
+            <option value="pad" {{ "selected" if cfg.photo.fit == "pad" }}>Whole photo (white bars)</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button class="primary" type="submit">Save</button>
+      {% if has_overrides %}<button class="quiet" type="submit" formaction="/settings/reset" formnovalidate>Reset to config.toml</button>{% endif %}
+    </div>
+  </form>
+</main>
+<script>
+  // Show the mixed/schedule/alternate blocks only when they apply. Works without JS too (all shown).
+  const sync = () => {
+    const mode = document.querySelector('input[name=mode]:checked')?.value;
+    const strat = document.querySelector('input[name=mixed_strategy]:checked')?.value;
+    for (const el of document.querySelectorAll('[data-show]')) {
+      const k = el.dataset.show;
+      el.style.display = (k === 'mixed' && mode === 'mixed') || (mode === 'mixed' && k === strat) ? 'block' : 'none';
+    }
+  };
+  document.querySelectorAll('[data-toggle]').forEach(i => i.addEventListener('change', sync));
+  document.querySelectorAll('[data-show]').forEach(el => el.style.display = 'block');
+  sync();
+</script>
+</body>
+</html>

@@ -23,7 +23,9 @@ def test_load_toml(tmp_path):
 
 
 @pytest.mark.parametrize("data", [
-    {"mode": "dashboard"},
+    {"mode": "billboard"},
+    {"timezone": "Mars/Olympus"},
+    {"dashboard": {"board": "nope"}},
     {"art": {"generators": ["nope"]}},
     {"art": {"generators": []}},
     {"art": {"order": "shuffle"}},
@@ -32,6 +34,13 @@ def test_load_toml(tmp_path):
 def test_invalid_config_is_rejected(data):
     with pytest.raises(config.ConfigError):
         config.parse(data)
+
+
+def test_dashboard_config():
+    cfg = config.parse({"mode": "dashboard", "timezone": "Asia/Tokyo", "dashboard": {"board": "daily"},
+                        "boards": {"daily": {"latitude": 1.5, "longitude": 2.5, "calendars": ["http://x/a.ics"]}}})
+    assert cfg.mode == "dashboard" and cfg.timezone == "Asia/Tokyo" and cfg.board == "daily"
+    assert cfg.boards["daily"]["latitude"] == 1.5
 
 
 def test_list_photos_skips_non_images_and_hidden(photo_dir):

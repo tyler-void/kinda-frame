@@ -4,8 +4,11 @@
 # What the frame shows:
 #   "art"   generative pieces rendered in code (docs/art.md), a new one on every sleep
 #   "photo" one image from [photo].dir, fitted and dithered for the screen
-#   ("dashboard" boards arrive with milestone M3b)
+#   "dashboard" a board rendered from live data: see [dashboard] and [boards.*] below
 mode = "art"
+
+# IANA time zone for dates, the agenda and "rendered at" (e.g. "Europe/Berlin").
+timezone = "Etc/UTC"
 
 [art]
 # Any non-empty subset of: chladni, flowfield, attractor, orbits
@@ -17,3 +20,15 @@ order = "random"
 dir = "/photos"       # container path; the host folder is ./photos (see compose.yaml)
 order = "random"      # random | sequential
 fit = "crop"          # crop (fill the screen) | pad (whole photo, white bars)
+
+[dashboard]
+board = "daily"       # boards: daily (more later: rss, trends, ...)
+
+[boards.daily]
+# Private: real values only in config.toml on the server.
+location_label = "Home"
+# latitude = 0.0      # for the weather (Open-Meteo, no API key)
+# longitude = 0.0
+units = "metric"      # metric | imperial
+# ICS feeds, e.g. Google Calendar "Secret address in iCal format". Treat these URLs as passwords.
+calendars = []

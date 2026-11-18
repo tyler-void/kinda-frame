@@ -1,0 +1,126 @@
+{%- from "_shared/icons.html" import icon -%}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  /* E-ink: white paper, black ink, one mid grey (#555 -> level 5) for secondary text. */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100vw; height: 100vh; background: #fff; color: #000; overflow: hidden; }
+  body { font-family: "DejaVu Sans", "Liberation Sans", sans-serif; font-size: 2.3vmin; line-height: 1.25; }
+  .muted { color: #555; }
+  .board { display: grid; width: 100%; height: 100%; padding: 4.5vmin; gap: 3.2vmin; }
+  .portrait .board { grid-template-rows: auto auto 1fr auto; grid-template-areas: "date" "weather" "agenda" "foot"; }
+  .landscape .board { grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr auto;
+                      grid-template-areas: "date agenda" "weather agenda" "foot foot"; column-gap: 5vmin; }
+  .date { grid-area: date; border-bottom: 0.45vmin solid #000; padding-bottom: 2.2vmin; }
+  .weekday { font-size: 9vmin; font-weight: bold; letter-spacing: -0.02em; line-height: 1; }
+  .dmy { font-size: 4.2vmin; margin-top: 1.2vmin; }
+  .meta { font-size: 2.2vmin; margin-top: 0.8vmin; }
+
+  .weather { grid-area: weather; }
+  .now { display: flex; align-items: center; gap: 3vmin; }
+  .icon { width: 15vmin; height: 15vmin; flex: none; }
+  .temp { font-size: 12vmin; font-weight: bold; line-height: 1; letter-spacing: -0.03em; }
+  .cond { font-size: 3.2vmin; }
+  .facts { display: flex; flex-wrap: wrap; gap: 0.6vmin 3.5vmin; margin-top: 2vmin; font-size: 2.4vmin; }
+  .facts b { font-weight: bold; }
+  .hours { display: grid; grid-template-columns: repeat(6, 1fr); margin-top: 2.6vmin;
+           border-top: 0.25vmin solid #000; border-bottom: 0.25vmin solid #000; padding: 1.4vmin 0; text-align: center; }
+  .hours .icon-s { width: 6.5vmin; height: 6.5vmin; display: block; margin: 0.4vmin auto; }
+  .hours .t { font-size: 2.6vmin; font-weight: bold; }
+  .hours .r, .hours .h { font-size: 1.9vmin; }
+  .tomorrow { margin-top: 1.8vmin; font-size: 2.4vmin; display: flex; align-items: center; gap: 1.4vmin; }
+  .tomorrow .icon-s { width: 4.6vmin; height: 4.6vmin; }
+
+  .agenda { grid-area: agenda; overflow: hidden; }
+  h2 { font-size: 2.4vmin; text-transform: uppercase; letter-spacing: 0.12em; border-bottom: 0.25vmin solid #000;
+       padding-bottom: 0.8vmin; margin-bottom: 1.2vmin; }
+  h2.next { margin-top: 2.6vmin; }
+  ul { list-style: none; }
+  li { display: grid; grid-template-columns: 15vmin 1fr; gap: 2vmin; padding: 0.9vmin 0; border-bottom: 0.15vmin solid #555; }
+  li:last-child { border-bottom: none; }
+  .when { font-weight: bold; white-space: nowrap; }
+  .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .where { font-size: 1.9vmin; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .na { font-size: 2.4vmin; padding: 1vmin 0; }
+  .na b { font-weight: bold; }
+
+  footer { grid-area: foot; display: flex; justify-content: space-between; font-size: 1.9vmin;
+           border-top: 0.25vmin solid #000; padding-top: 1.2vmin; }
+</style>
+</head>
+<body class="{{ 'landscape' if landscape else 'portrait' }}">
+<main class="board">
+
+  <section class="date">
+    <div class="weekday">{{ date.weekday }}</div>
+    <div class="dmy">{{ date.day }} {{ date.month }} {{ date.year }}</div>
+    <div class="meta muted">Week {{ date.week }}{% if location %} · {{ location }}{% endif %}</div>
+  </section>
+
+  <section class="weather">
+  {%- if weather.ok %}{% set w = weather.data %}
+    <div class="now">
+      {{ icon(w.now.icon) }}
+      <div>
+        <div class="temp">{{ w.now.temp }}{{ units }}</div>
+        <div class="cond">{{ w.now.label }} <span class="muted">· feels {{ w.now.feels }}°</span></div>
+      </div>
+    </div>
+    <div class="facts">
+      <span>High <b>{{ w.today.hi }}°</b> · Low <b>{{ w.today.lo }}°</b></span>
+      <span>Rain <b>{{ w.today.rain }}%</b></span>
+      <span class="muted">Sunrise {{ w.today.sunrise }} · Sunset {{ w.today.sunset }}</span>
+    </div>
+    {%- if w.hours %}
+    <div class="hours">
+      {%- for hr in w.hours %}
+      <div><div class="h muted">{{ hr.time }}</div>{{ icon(hr.icon, "icon-s") }}<div class="t">{{ hr.temp }}°</div><div class="r muted">{{ hr.rain }}%</div></div>
+      {%- endfor %}
+    </div>
+    {%- endif %}
+    <div class="tomorrow">{{ icon(w.tomorrow.icon, "icon-s") }}<span><b>{{ date.tomorrow }}</b> · {{ w.tomorrow.label }} · {{ w.tomorrow.lo }}–{{ w.tomorrow.hi }}° · rain {{ w.tomorrow.rain }}%</span></div>
+    {%- if weather.stale %}<p class="na muted">Weather from cache: refresh failed</p>{% endif %}
+  {%- else %}
+    <p class="na"><b>Weather unavailable</b> <span class="muted">· {{ weather.error }}</span></p>
+  {%- endif %}
+  </section>
+
+  <section class="agenda">
+    <h2>Today</h2>
+  {%- if calendar.ok %}
+    {%- set today = calendar.data.today %}
+    {%- if today %}
+    <ul>
+      {%- for e in today[:max_events] %}
+      <li><span class="when">{{ e.when }}</span><span><div class="title">{{ e.title }}</div>{% if e.location %}<div class="where muted">{{ e.location }}</div>{% endif %}</span></li>
+      {%- endfor %}
+    </ul>
+    {%- if today|length > max_events %}<p class="na muted">+ {{ today|length - max_events }} more</p>{% endif %}
+    {%- else %}
+    <p class="na muted">Nothing scheduled.</p>
+    {%- endif %}
+    {%- if calendar.data.tomorrow %}
+    <h2 class="next">{{ date.tomorrow }}</h2>
+    <ul>
+      {%- for e in calendar.data.tomorrow %}
+      <li><span class="when">{{ e.when }}</span><span class="title">{{ e.title }}</span></li>
+      {%- endfor %}
+    </ul>
+    {%- endif %}
+    {%- if calendar.data.failed %}<p class="na muted">{{ calendar.data.failed }} calendar(s) unavailable</p>{% endif %}
+  {%- else %}
+    <p class="na"><b>Calendar unavailable</b> <span class="muted">· {{ calendar.error }}</span></p>
+  {%- endif %}
+  </section>
+
+  <footer class="muted">
+    <span>Rendered {{ rendered }}</span>
+    <span>{% if battery is not none %}Kindle battery {{ battery }}%{% endif %}</span>
+    <span>kinda-frame · {{ board }}</span>
+  </footer>
+
+</main>
+</body>
+</html>

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .base import Piece, aspect_bounds, coverage, density, portrait, tonemap
+from .base import Piece, align, aspect_bounds, coverage, density, tonemap
 
 CLIFFORD = [(-1.4, 1.6, 1.0, 0.7), (1.7, 1.7, 0.6, 1.2), (-1.7, 1.3, -0.1, -1.2),
             (-1.7, 1.8, -1.9, -0.4), (1.5, -1.8, 1.6, 0.9), (-1.8, -2.0, -0.5, -0.9)]
@@ -46,7 +46,7 @@ def render(rng: np.random.Generator, w: int, h: int) -> Piece:
         base = CLIFFORD if kind == "clifford" else DE_JONG
         p = tuple(float(v) for v in np.array(base[int(rng.integers(len(base)))]) + rng.normal(0, 0.04, 4))
         xs, ys = _iterate(kind, p, rng)
-        xs, ys = portrait(xs, ys)  # long axis vertical: use the portrait frame
+        xs, ys = align(xs, ys, w, h)  # long axis along the frame's long side
         d = density(xs, ys, w, h, aspect_bounds(xs, ys, w, h))
         paper = tonemap(d, gamma=0.42)
         if 0.04 < coverage(paper) < 0.75:

@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .base import Piece, aspect_bounds, density, portrait, tonemap
+from .base import Piece, align, aspect_bounds, density, tonemap
 
 RATIOS = [(2, 3), (3, 4), (1, 2), (3, 5), (2, 5), (4, 5), (1, 3)]
 
@@ -61,6 +61,6 @@ def render(rng: np.random.Generator, w: int, h: int) -> Piece:
     else:
         x, y, params = _epicycles(rng)
         title = "Epicycles"
-    x, y = portrait(x, y)
+    x, y = align(x, y, w, h)
     d = density(x, y, w, h, aspect_bounds(x, y, w, h, lo=0.0, hi=100.0))
     return Piece(tonemap(d, gamma=0.5), title, params)

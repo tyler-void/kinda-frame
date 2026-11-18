@@ -22,3 +22,13 @@ server/photos/
 
 # Per-machine Claude Code settings
 .claude/settings.local.json
+
+# Personal photos dropped in the repo root: never commit (SPEC.md rule 7). They belong in ~/kinda-frame/photos on the server.
+/*.jpg
+/*.jpeg
+/*.JPG
+/*.JPEG
+/*.png
+/*.heic
+/*.HEIC
+/*.webp

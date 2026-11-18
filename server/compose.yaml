@@ -22,11 +22,11 @@ services:
       - state:/state
     read_only: true
     tmpfs:
-      - /tmp
+      - /tmp:size=256m
     cap_drop: [ALL]
     security_opt:
       - "no-new-privileges:true"
-    mem_limit: 512m
+    mem_limit: 1g  # Chromium for dashboard boards; art/photo alone stay under 200 MB
     cpus: 2
     logging:
       driver: json-file
