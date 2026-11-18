@@ -190,7 +190,7 @@ function KindaFrame:startFetch(gen)
     local a = self.session:active()
     os.remove(PART)
     a.w, a.h = Screen:getWidth(), Screen:getHeight()
-    local url = req.build_url(a.url, a.w, a.h, battery())
+    local url = req.build_url(a.url, a.w, a.h, battery(), setting("orient", "portrait"))
     local limit = math.max(1, math.floor(self.session:remaining()))
 
     local pid, fd = ffiutil.runInSubProcess(function(_pid, wfd)
@@ -382,6 +382,31 @@ function KindaFrame:editUrl(touchmenu_instance)
     dialog:onShowKeyboard()
 end
 
+local ORIENT_LABELS = {
+    { "portrait", _("Portrait (upright)") },
+    { "left", _("Landscape, resting on left edge") },
+    { "right", _("Landscape, resting on right edge") },
+}
+
+function KindaFrame:orientMenu()
+    local items = {}
+    for _i, o in ipairs(ORIENT_LABELS) do
+        local key, label = o[1], o[2]
+        items[#items + 1] = {
+            text = label,
+            radio = true,
+            checked_func = function() return setting("orient", "portrait") == key end,
+            callback = function()
+                if setting("orient", "portrait") == key then return end
+                save("orient", key)
+                -- Fetch right away so the very next sleep already opens in the new orientation.
+                if req.valid_base(setting("server_url")) then self:fetchNow() end
+            end,
+        }
+    end
+    return items
+end
+
 function KindaFrame:addToMainMenu(menu_items)
     menu_items.kinda_frame = {
         text = _("Kinda Frame"),
@@ -396,6 +421,16 @@ function KindaFrame:addToMainMenu(menu_items)
                 text_func = function() return T(_("Server URL: %1"), setting("server_url") or _("not set")) end,
                 keep_menu_open = true,
                 callback = function(touchmenu_instance) self:editUrl(touchmenu_instance) end,
+            },
+            {
+                text_func = function()
+                    local cur = setting("orient", "portrait")
+                    for _i, o in ipairs(ORIENT_LABELS) do
+                        if o[1] == cur then return T(_("Frame orientation: %1"), o[2]) end
+                    end
+                    return _("Frame orientation")
+                end,
+                sub_item_table = self:orientMenu(),
             },
             {
                 text_func = function() return T(_("Fetch budget: %1 s (tap to change)"), budget.clamp(setting("budget_s"))) end,

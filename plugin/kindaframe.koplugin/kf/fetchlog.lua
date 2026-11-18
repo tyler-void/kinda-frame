@@ -18,7 +18,7 @@ end
 
 function M.format(ts, fields)
     local parts = { ts }
-    for _, k in ipairs(ORDER) do
+    for _i, k in ipairs(ORDER) do
         local v = fields[k]
         if v ~= nil then
             if k == "wifi_before" or k == "wifi_after" then v = onoff(v) end

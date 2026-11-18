@@ -309,6 +309,48 @@ describe("main: settings and manual fetch", function()
         plugin:onSuspend(); advance(5)
         has(only_log(), "outcome=skipped_no_window")
     end)
+    it("sends the orientation setting with every request", function()
+        H.settings.kindaframe_orient = "left"
+        plugin:onSuspend(); advance(5)
+        assert_eq(H.http.urls[1], "http://192.168.1.60:8787/frame.png?w=1072&h=1448&batt=84&orient=left")
+    end)
+    it("changing the orientation in the menu saves it and fetches immediately", function()
+        H.screen_saver_mode = false
+        local items = plugin:orientMenu()
+        items[3].callback() -- right edge
+        advance(5)
+        assert_eq(H.settings.kindaframe_orient, "right")
+        assert_true(H.http.urls[1]:find("orient=right", 1, true) ~= nil)
+        has(only_log(), "kind=manual")
+        items[3].callback() -- same choice again: no extra fetch
+        advance(5)
+        assert_eq(#H.http.urls, 1)
+    end)
+    it("every menu entry renders: all text_func / checked_func / enabled_func run without error", function()
+        -- Regression: a loop variable named `_` shadowed gettext and crashed KOReader when the menu opened.
+        local items = {}
+        plugin:addToMainMenu(items)
+        local count = 0
+        local function walk(list)
+            for _i, item in ipairs(list) do
+                if item.text_func then assert_eq(type(item.text_func()), "string"); count = count + 1 end
+                if item.checked_func then item.checked_func() end
+                if item.enabled_func then item.enabled_func() end
+                if item.sub_item_table then walk(item.sub_item_table) end
+            end
+        end
+        for _orient, o in ipairs({ "portrait", "left", "right" }) do
+            H.settings.kindaframe_orient = o
+            walk(items.kinda_frame.sub_item_table)
+        end
+        assert_true(count >= 9, "text_func entries exercised")
+    end)
+    it("no loop variable shadows gettext's `_` in the plugin sources", function()
+        for _i, f in ipairs({ "main.lua", "kf/budget.lua", "kf/fetchlog.lua", "kf/pngcheck.lua", "kf/request.lua", "kf/session.lua" }) do
+            local src = read(f)
+            assert_true(src:find("for%s+_%s*,") == nil, f .. " uses `for _,` (shadows gettext)")
+        end
+    end)
     it("Fetch now (awake): saves the frame, no redraw, shows a short message", function()
         H.screen_saver_mode = false
         plugin:fetchNow(); advance(5)

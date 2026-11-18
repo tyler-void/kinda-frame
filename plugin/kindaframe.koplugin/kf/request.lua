@@ -14,10 +14,14 @@ function M.valid_base(url)
     return type(url) == "string" and url:match("^http://[^/%s]+") ~= nil
 end
 
---- Append w, h and (optionally) batt to the configured URL, keeping any existing query.
-function M.build_url(base, w, h, batt)
+M.ORIENTS = { portrait = true, left = true, right = true }
+
+--- Append w, h, (optionally) batt and orient to the configured URL, keeping any existing query.
+-- orient: "portrait" (default, not sent), "left" (resting on its left edge), "right".
+function M.build_url(base, w, h, batt, orient)
     local q = string.format("w=%d&h=%d", w, h)
     if batt then q = q .. string.format("&batt=%d", math.max(0, math.min(100, math.floor(batt)))) end
+    if orient and orient ~= "portrait" and M.ORIENTS[orient] then q = q .. "&orient=" .. orient end
     local sep = base:find("?", 1, true) and "&" or "?"
     return base .. sep .. q
 end
